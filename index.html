@@ -1,0 +1,2439 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSVForge — Local CSV Data Converter &amp; Exporter</title>
+  <meta
+    name="description"
+    content="Convert CSV and TSV files to JSON, Excel (.xlsx), TSV, Markdown, HTML, and SQL INSERT statements 100% locally in your browser. Private, fast, and zero uploads."
+  />
+  <meta
+    name="keywords"
+    content="csv converter, csv to json, csv to excel, csv to sql, csv to markdown, local csv parser, client-side data converter, tsv converter"
+  />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="CSVForge" />
+  <meta property="og:title" content="CSVForge — Local CSV Data Converter &amp; Exporter" />
+  <meta
+    property="og:description"
+    content="100% client-side CSV &amp; TSV converter. Transform data into JSON, Excel (.xlsx), Markdown, HTML, TSV, and SQL without your files ever leaving your browser."
+  />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="CSVForge — Local CSV Data Converter &amp; Exporter" />
+  <meta
+    name="twitter:description"
+    content="Convert CSV and TSV files to JSON, Excel (.xlsx), TSV, Markdown, HTML, and SQL locally in your browser."
+  />
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "CSVForge",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "All",
+    "description": "100% client-side CSV and TSV converter to JSON, Excel (.xlsx), TSV, Markdown, HTML, and SQL INSERT statements.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
+  <!-- Typography: Plus Jakarta Sans + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- CDN Parsing & Export Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+  <script>
+    // Apply saved or preferred theme before first paint to prevent flash
+    (function () {
+      try {
+        var saved = localStorage.getItem('csvforge-theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (saved === 'dark' || (!saved && prefersDark)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-2: #f1f5f9;
+      --surface-hover: #e2e8f0;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-subtle: #64748b;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-fg: #ffffff;
+      --accent-soft: #eff6ff;
+      --accent-soft-text: #1d4ed8;
+      --success: #15803d;
+      --success-bg: #f0fdf4;
+      --success-border: #bbf7d0;
+      --warning: #b45309;
+      --warning-bg: #fffbeb;
+      --warning-border: #fde68a;
+      --danger: #b91c1c;
+      --danger-bg: #fef2f2;
+      --danger-border: #fecaca;
+      --code-bg: #0f172a;
+      --code-text: #e2e8f0;
+      --radius-lg: 12px;
+      --radius-md: 8px;
+      --radius-sm: 6px;
+      --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    html.dark {
+      --bg: #0b1120;
+      --surface: #111827;
+      --surface-2: #1e293b;
+      --surface-hover: #293548;
+      --border: #1f2937;
+      --border-strong: #334155;
+      --text: #f8fafc;
+      --text-muted: #cbd5e1;
+      --text-subtle: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-fg: #ffffff;
+      --accent-soft: rgba(59, 130, 246, 0.14);
+      --accent-soft-text: #93c5fd;
+      --success: #4ade80;
+      --success-bg: rgba(22, 163, 74, 0.12);
+      --success-border: rgba(74, 222, 128, 0.25);
+      --warning: #fbbf24;
+      --warning-bg: rgba(217, 119, 6, 0.12);
+      --warning-border: rgba(251, 191, 36, 0.25);
+      --danger: #f87171;
+      --danger-bg: rgba(220, 38, 38, 0.12);
+      --danger-border: rgba(248, 113, 113, 0.25);
+      --code-bg: #070b14;
+      --code-text: #e2e8f0;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.16s ease, color 0.16s ease;
+    }
+
+    html.dark body {
+      letter-spacing: 0.005em;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Top Bar Contract: 1 row, 3 distinct zones */
+    .topbar {
+      border-bottom: 1px solid var(--border);
+      background-color: var(--surface);
+    }
+
+    .topbar-inner {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .brand svg {
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .privacy-statement {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .privacy-statement svg {
+      color: var(--success);
+      flex-shrink: 0;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-strong);
+      background-color: var(--surface);
+      color: var(--text);
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      background-color: var(--surface-2);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      border-color: var(--accent);
+      color: var(--accent-fg);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .btn-ghost {
+      background-color: transparent;
+      border-color: transparent;
+      color: var(--text-muted);
+    }
+
+    .btn-ghost:hover:not(:disabled) {
+      background-color: var(--surface-2);
+      color: var(--text);
+    }
+
+    .btn-sm {
+      min-height: 34px;
+      padding: 6px 12px;
+      font-size: 12.5px;
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 28px 24px 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Intro Hero Strip */
+    .intro-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .intro-copy h1 {
+      margin: 0;
+      font-size: clamp(1.5rem, 2.4vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+      text-wrap: balance;
+    }
+
+    .intro-copy p {
+      margin: 6px 0 0;
+      font-size: 14.5px;
+      color: var(--text-muted);
+      max-width: 68ch;
+    }
+
+    .mobile-privacy {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .mobile-privacy svg {
+      color: var(--success);
+      flex-shrink: 0;
+    }
+
+    /* Surface Panels (single elevation) */
+    .panel {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .panel-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .panel-body {
+      padding: 20px;
+    }
+
+    /* Segmented Tabs */
+    .segmented {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      background-color: var(--surface-2);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+    }
+
+    .seg-btn {
+      min-height: 32px;
+      padding: 5px 12px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background-color 0.14s ease, color 0.14s ease;
+    }
+
+    .seg-btn:hover {
+      color: var(--text);
+    }
+
+    .seg-btn[aria-selected="true"],
+    .seg-btn.active {
+      background-color: var(--surface);
+      color: var(--text);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+
+    /* Input Controls Row */
+    .input-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .input-controls-right {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .field-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .select-input,
+    .text-input {
+      min-height: 36px;
+      padding: 6px 10px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-strong);
+      background-color: var(--surface);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .text-input.mono {
+      font-family: var(--font-mono);
+    }
+
+    /* Dropzone */
+    .dropzone {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 10px;
+      padding: 36px 24px;
+      border: 1.5px dashed var(--border-strong);
+      border-radius: var(--radius-md);
+      background-color: var(--surface-2);
+      cursor: pointer;
+      transition: border-color 0.16s ease, background-color 0.16s ease;
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--accent);
+      background-color: var(--accent-soft);
+    }
+
+    .dropzone-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--accent);
+    }
+
+    .dropzone-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .dropzone-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .file-input-hidden {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* Paste CSV Pane */
+    .paste-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .csv-textarea {
+      width: 100%;
+      min-height: 170px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-strong);
+      background-color: var(--surface-2);
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.55;
+      resize: vertical;
+    }
+
+    .paste-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .paste-actions-left {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Alerts & Notices */
+    .alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      font-size: 13.5px;
+      line-height: 1.45;
+    }
+
+    .alert svg {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .alert-error {
+      background-color: var(--danger-bg);
+      border-color: var(--danger-border);
+      color: var(--danger);
+    }
+
+    .alert-warning {
+      background-color: var(--warning-bg);
+      border-color: var(--warning-border);
+      color: var(--warning);
+    }
+
+    .alert-success {
+      background-color: var(--success-bg);
+      border-color: var(--success-border);
+      color: var(--success);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Workspace Grid (Preview + Export side by side on wide desktop) */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* Cleanup & Column Filter Strip */
+    .cleanup-bar {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background-color: var(--surface);
+    }
+
+    .toggles-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .check-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .check-label input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .columns-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .columns-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    .columns-header-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .text-link-btn {
+      background: none;
+      border: none;
+      padding: 2px 4px;
+      color: var(--accent);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .text-link-btn:hover {
+      text-decoration: underline;
+    }
+
+    .columns-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      max-height: 112px;
+      overflow-y: auto;
+      padding: 2px 0;
+    }
+
+    .col-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      font-family: var(--font-mono);
+      color: var(--text);
+      cursor: pointer;
+      max-width: 220px;
+    }
+
+    .col-check span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .col-check input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* Meta summary line (unboxed typography with separators) */
+    .meta-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .meta-sep {
+      color: var(--border-strong);
+    }
+
+    /* Table Preview */
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+
+    table.preview-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      text-align: left;
+      font-variant-numeric: tabular-nums;
+    }
+
+    table.preview-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background-color: var(--surface-2);
+      color: var(--text);
+      font-weight: 600;
+      font-family: var(--font-mono);
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-strong);
+      border-right: 1px solid var(--border);
+      white-space: nowrap;
+      max-width: 240px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    table.preview-table thead th.row-num-col {
+      width: 48px;
+      text-align: right;
+      color: var(--text-subtle);
+    }
+
+    table.preview-table tbody td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      font-family: var(--font-mono);
+      vertical-align: top;
+      min-width: 84px;
+      max-width: 280px;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+    }
+
+    table.preview-table tbody tr:hover td {
+      background-color: var(--surface-2);
+    }
+
+    table.preview-table tbody td.row-num-cell {
+      min-width: 44px;
+      width: 44px;
+      text-align: right;
+      color: var(--text-subtle);
+      background-color: var(--surface);
+      user-select: none;
+    }
+
+    .cell-empty {
+      color: var(--text-subtle);
+      font-style: italic;
+    }
+
+    .cell-num {
+      color: var(--accent);
+    }
+
+    .cell-bool {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    /* Empty State inside Workspace */
+    .empty-state {
+      padding: 56px 24px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .empty-state h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .empty-state p {
+      margin: 0;
+      font-size: 13.5px;
+      color: var(--text-muted);
+      max-width: 42ch;
+    }
+
+    /* Export Panel */
+    .format-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background-color: var(--surface);
+    }
+
+    .format-tab {
+      min-height: 34px;
+      padding: 5px 10px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background-color: var(--surface-2);
+      color: var(--text-muted);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.14s ease;
+    }
+
+    .format-tab:hover {
+      color: var(--text);
+      border-color: var(--border-strong);
+    }
+
+    .format-tab.active,
+    .format-tab[aria-selected="true"] {
+      background-color: var(--accent);
+      border-color: var(--accent);
+      color: var(--accent-fg);
+    }
+
+    .format-options {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background-color: var(--surface);
+    }
+
+    .options-left {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .export-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .output-preview-wrap {
+      padding: 16px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .output-code {
+      margin: 0;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.55;
+      overflow: auto;
+      max-height: 440px;
+      white-space: pre;
+      border: 1px solid var(--border);
+    }
+
+    .xlsx-summary {
+      padding: 20px;
+      border-radius: var(--radius-md);
+      background-color: var(--surface-2);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .xlsx-summary h3 {
+      margin: 0;
+      font-size: 14.5px;
+      font-weight: 600;
+    }
+
+    .xlsx-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .xlsx-stat {
+      padding: 12px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+
+    .xlsx-stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .xlsx-stat-value {
+      margin-top: 2px;
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .footer {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 0 24px 32px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12.5px;
+      color: var(--text-subtle);
+    }
+
+    /* Responsive Breakpoints */
+    @media (max-width: 1080px) {
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 780px) {
+      .topbar-inner {
+        padding: 12px 16px;
+        gap: 16px;
+      }
+
+      .privacy-statement {
+        display: none;
+      }
+
+      .mobile-privacy {
+        display: flex;
+      }
+
+      .container {
+        padding: 18px 16px 40px;
+        gap: 18px;
+      }
+
+      .xlsx-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="#top" class="brand" id="top">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+          <path d="M3 9h18"></path>
+          <path d="M3 15h18"></path>
+          <path d="M9 3v18"></path>
+        </svg>
+        <span>CSVForge</span>
+      </a>
+
+      <div class="privacy-statement" aria-label="Privacy guarantee">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span>100% Local &amp; Private — Your files never leave your browser</span>
+      </div>
+
+      <div class="topbar-actions">
+        <button type="button" class="btn btn-sm" id="themeToggleBtn" aria-label="Switch color theme">
+          <svg id="themeIconSun" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path>
+            <path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+          <svg id="themeIconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+          <span id="themeToggleText">Dark Mode</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="mobile-privacy" aria-label="Privacy guarantee">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+      <span>100% Local &amp; Private — Your files never leave your browser</span>
+    </div>
+
+    <div class="intro-header">
+      <div class="intro-copy">
+        <h1>Client-Side CSV &amp; TSV Data Converter</h1>
+        <p>
+          Drop a spreadsheet or paste raw CSV text to clean, filter columns, and export directly to JSON, Excel (.xlsx), TSV, Markdown, HTML, or SQL.
+        </p>
+      </div>
+      <div class="export-actions">
+        <button type="button" class="btn btn-sm" id="heroSampleBtn">Load Sample Data</button>
+        <button type="button" class="btn btn-sm btn-ghost hidden" id="resetDataBtn">Clear Data</button>
+      </div>
+    </div>
+
+    <!-- Input Panel -->
+    <section class="panel" aria-label="CSV Input Source">
+      <div class="panel-header">
+        <div class="segmented" role="tablist" aria-label="Input source mode">
+          <button
+            type="button"
+            class="seg-btn active"
+            id="tabUploadBtn"
+            role="tab"
+            aria-selected="true"
+            aria-controls="uploadPane"
+          >
+            Upload File
+          </button>
+          <button
+            type="button"
+            class="seg-btn"
+            id="tabPasteBtn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="pastePane"
+          >
+            Paste Raw CSV
+          </button>
+        </div>
+
+        <div class="input-controls-right">
+          <label class="field-inline" for="delimiterSelect">
+            <span>Delimiter</span>
+            <select id="delimiterSelect" class="select-input">
+              <option value="auto">Auto-detect</option>
+              <option value=",">Comma (,)</option>
+              <option value=";">Semicolon (;)</option>
+              <option value="&#9;">Tab (\t)</option>
+              <option value="|">Pipe (|)</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="panel-body">
+        <!-- Upload File Pane -->
+        <div id="uploadPane" role="tabpanel" aria-labelledby="tabUploadBtn">
+          <label class="dropzone" id="dropzone" for="fileInput">
+            <input
+              type="file"
+              id="fileInput"
+              class="file-input-hidden"
+              accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+              aria-label="Choose a CSV, TSV, or TXT file"
+            />
+            <div class="dropzone-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <div class="dropzone-title" id="dropzoneTitle">Drop your CSV or TSV file here, or click to browse</div>
+            <div class="dropzone-sub" id="dropzoneSub">Supports .csv, .tsv, and .txt files — parsed instantly on your device</div>
+          </label>
+        </div>
+
+        <!-- Paste Raw CSV Pane -->
+        <div id="pastePane" class="paste-pane hidden" role="tabpanel" aria-labelledby="tabPasteBtn">
+          <label for="rawCsvInput" class="sr-only">Paste raw CSV or TSV text</label>
+          <textarea
+            id="rawCsvInput"
+            class="csv-textarea"
+            placeholder="Paste CSV, TSV, or pipe-delimited text here..."
+            spellcheck="false"
+          ></textarea>
+          <div class="paste-actions">
+            <div class="paste-actions-left">
+              <button type="button" class="btn btn-sm" id="loadSampleBtn">Load Sample Data</button>
+              <button type="button" class="btn btn-sm btn-ghost" id="clearPasteBtn">Clear Text</button>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="parsePasteBtn">Parse CSV</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Status / Error / Performance Alerts -->
+    <div id="errorAlert" class="alert alert-error hidden" role="alert">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <div id="errorAlertText"></div>
+    </div>
+
+    <div id="warningAlert" class="alert alert-warning hidden" role="status">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+      <div id="warningAlertText"></div>
+    </div>
+
+    <!-- Main Data Preview & Export Workspace -->
+    <div class="workspace-grid">
+      <!-- Left: Live Preview & Quick Clean -->
+      <section class="panel" aria-label="Data Preview and Cleanup">
+        <div class="panel-header">
+          <h2 class="panel-title">Live Data Preview</h2>
+          <div class="meta-line" id="previewMeta">
+            <span>No file loaded</span>
+          </div>
+        </div>
+
+        <div class="cleanup-bar" id="cleanupBar">
+          <div class="toggles-row">
+            <label class="check-label">
+              <input type="checkbox" id="optTrim" checked />
+              <span>Trim whitespace</span>
+            </label>
+            <label class="check-label">
+              <input type="checkbox" id="optSkipEmpty" checked />
+              <span>Skip empty rows</span>
+            </label>
+            <label class="check-label">
+              <input type="checkbox" id="optAutoParse" checked />
+              <span>Auto-parse numbers &amp; booleans</span>
+            </label>
+          </div>
+
+          <div class="columns-section hidden" id="columnsSection">
+            <div class="columns-header">
+              <span id="columnsCountLabel">Columns included in export</span>
+              <div class="columns-header-actions">
+                <button type="button" class="text-link-btn" id="selectAllColsBtn">Select all</button>
+                <button type="button" class="text-link-btn" id="deselectAllColsBtn">Deselect all</button>
+              </div>
+            </div>
+            <div class="columns-grid" id="columnsList"></div>
+          </div>
+        </div>
+
+        <div id="previewEmptyState" class="empty-state">
+          <h2>Ready for your data</h2>
+          <p>Upload a .csv or .tsv file above, paste raw text, or load the built-in sample dataset to preview rows and clean columns.</p>
+          <button type="button" class="btn btn-primary btn-sm" id="emptySampleBtn">Load Sample Data</button>
+        </div>
+
+        <div id="previewTableWrap" class="table-scroll hidden">
+          <table class="preview-table" id="previewTable">
+            <thead id="previewThead"></thead>
+            <tbody id="previewTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Right: Format Conversion & Download -->
+      <section class="panel" aria-label="Export Format and Output">
+        <div class="panel-header">
+          <h2 class="panel-title">Export Output</h2>
+          <div class="meta-line" id="exportMeta">
+            <span>Select a format</span>
+          </div>
+        </div>
+
+        <div class="format-tabs" role="tablist" aria-label="Output format">
+          <button type="button" class="format-tab active" data-format="json" role="tab" aria-selected="true">JSON</button>
+          <button type="button" class="format-tab" data-format="xlsx" role="tab" aria-selected="false">Excel (.xlsx)</button>
+          <button type="button" class="format-tab" data-format="tsv" role="tab" aria-selected="false">TSV</button>
+          <button type="button" class="format-tab" data-format="markdown" role="tab" aria-selected="false">Markdown</button>
+          <button type="button" class="format-tab" data-format="html" role="tab" aria-selected="false">HTML Table</button>
+          <button type="button" class="format-tab" data-format="sql" role="tab" aria-selected="false">SQL INSERT</button>
+        </div>
+
+        <div class="format-options">
+          <div class="options-left" id="formatOptionsLeft">
+            <!-- JSON Options -->
+            <div id="jsonOptions" class="options-left">
+              <div class="segmented" role="group" aria-label="JSON structure">
+                <button type="button" class="seg-btn active" id="jsonObjBtn" aria-pressed="true">Array of Objects</button>
+                <button type="button" class="seg-btn" id="jsonArrBtn" aria-pressed="false">Array of Arrays</button>
+              </div>
+              <div class="segmented" role="group" aria-label="JSON formatting">
+                <button type="button" class="seg-btn active" id="jsonPrettyBtn" aria-pressed="true">Pretty-Print</button>
+                <button type="button" class="seg-btn" id="jsonMiniBtn" aria-pressed="false">Minified</button>
+              </div>
+            </div>
+
+            <!-- SQL Options -->
+            <div id="sqlOptions" class="options-left hidden">
+              <label class="field-inline" for="sqlTableInput">
+                <span>Table name</span>
+                <input type="text" id="sqlTableInput" class="text-input mono" value="exported_data" placeholder="table_name" />
+              </label>
+            </div>
+
+            <!-- Generic info for TSV / Markdown / HTML / XLSX -->
+            <div id="genericFormatNote" class="meta-line hidden"></div>
+          </div>
+
+          <div class="export-actions">
+            <button type="button" class="btn btn-sm" id="copyBtn" disabled>Copy to Clipboard</button>
+            <button type="button" class="btn btn-primary btn-sm" id="downloadBtn" disabled>Download .json</button>
+          </div>
+        </div>
+
+        <div class="output-preview-wrap">
+          <div id="outputTruncateNotice" class="meta-line hidden"></div>
+          <pre id="outputCode" class="output-code">Load or paste CSV data to preview converted output.</pre>
+
+          <div id="xlsxSummary" class="xlsx-summary hidden">
+            <h3>Excel Workbook Ready (.xlsx)</h3>
+            <p class="meta-line" style="margin: 0;">
+              Columns are auto-fitted to cell widths, and parsed numbers and booleans are written with native Excel cell types.
+            </p>
+            <div class="xlsx-stats">
+              <div class="xlsx-stat">
+                <div class="xlsx-stat-label">Rows to Export</div>
+                <div class="xlsx-stat-value" id="xlsxRowCount">0</div>
+              </div>
+              <div class="xlsx-stat">
+                <div class="xlsx-stat-label">Included Columns</div>
+                <div class="xlsx-stat-value" id="xlsxColCount">0</div>
+              </div>
+              <div class="xlsx-stat">
+                <div class="xlsx-stat-label">Sheet Name</div>
+                <div class="xlsx-stat-value" id="xlsxSheetName">Data</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <span>CSVForge — Zero-upload static data converter</span>
+    <span>All parsing and conversion executed locally in your browser</span>
+  </footer>
+
+  <!-- Pure Conversion & Cleanup Engine -->
+  <script id="csv-engine">
+    (function (root) {
+      var SAMPLE_CSV = [
+        'id,full_name,company,amount_usd,is_active,notes,postal_code,joined_date',
+        '101,"Smith, Jr., John","O\'Reilly Media, Inc.",1499.50,true,"He said ""Hello, World!"" & smiled",02138,2026-01-15',
+        ' 102 ,"  Elena Rostova  ","Nordic & Co.",-42.75,false,"Line 1',
+        'Line 2 with | pipe",94107, 2026-02-20 ',
+        ',,,,,,,',
+        '103,"Marcus Vance","<script>alert(\'xss\')<' + '/script>",0,TRUE,"Café €120 — Special chars",00501,2026-03-04',
+        '104,"Priya Nair","Acme | Labs",820,FALSE,,10001,2026-04-11'
+      ].join('\n');
+
+      var DELIMITER_LABELS = {
+        ',': 'Comma (,)',
+        ';': 'Semicolon (;)',
+        '\t': 'Tab (\\t)',
+        '|': 'Pipe (|)'
+      };
+
+      function parseCellValue(raw, autoParse) {
+        if (!autoParse) {
+          return raw;
+        }
+        var str = String(raw);
+        if (str === '') {
+          return null;
+        }
+        var lower = str.toLowerCase();
+        if (lower === 'true') {
+          return true;
+        }
+        if (lower === 'false') {
+          return false;
+        }
+        // Standard JSON-like numbers; preserves leading-zero identifiers such as "02138"
+        if (/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(str)) {
+          var num = Number(str);
+          if (Number.isFinite(num)) {
+            return num;
+          }
+        }
+        return str;
+      }
+
+      function normalizeHeaders(rawHeaders, trimWhitespace) {
+        var seen = Object.create(null);
+        return rawHeaders.map(function (h, idx) {
+          var label = trimWhitespace ? String(h == null ? '' : h).trim() : String(h == null ? '' : h);
+          if (label === '') {
+            label = 'column_' + (idx + 1);
+          }
+          if (Object.prototype.hasOwnProperty.call(seen, label)) {
+            seen[label] += 1;
+            return label + '_' + seen[label];
+          }
+          seen[label] = 1;
+          return label;
+        });
+      }
+
+      function isRowEmpty(row, trimWhitespace) {
+        if (!row || row.length === 0) {
+          return true;
+        }
+        for (var i = 0; i < row.length; i++) {
+          var val = row[i] == null ? '' : String(row[i]);
+          if ((trimWhitespace ? val.trim() : val) !== '') {
+            return false;
+          }
+        }
+        return true;
+      }
+
+      function processRawGrid(rawGrid, options) {
+        var opts = options || {};
+        var trimWhitespace = opts.trimWhitespace !== false;
+        var skipEmptyRows = opts.skipEmptyRows !== false;
+
+        if (!Array.isArray(rawGrid) || rawGrid.length === 0) {
+          return { headers: [], rows: [], jaggedRows: [] };
+        }
+
+        var headerIndex = 0;
+        if (skipEmptyRows) {
+          while (headerIndex < rawGrid.length && isRowEmpty(rawGrid[headerIndex], trimWhitespace)) {
+            headerIndex++;
+          }
+        }
+
+        if (headerIndex >= rawGrid.length) {
+          return { headers: [], rows: [], jaggedRows: [] };
+        }
+
+        var rawHeaderRow = rawGrid[headerIndex].map(function (cell) {
+          return cell == null ? '' : String(cell);
+        });
+
+        var maxCols = rawHeaderRow.length;
+        var dataRows = [];
+        var jaggedRows = [];
+
+        for (var r = headerIndex + 1; r < rawGrid.length; r++) {
+          var current = rawGrid[r];
+          if (skipEmptyRows && isRowEmpty(current, trimWhitespace)) {
+            continue;
+          }
+          if (current.length !== rawHeaderRow.length) {
+            jaggedRows.push(r + 1);
+          }
+          if (current.length > maxCols) {
+            maxCols = current.length;
+          }
+          dataRows.push(current);
+        }
+
+        while (rawHeaderRow.length < maxCols) {
+          rawHeaderRow.push('');
+        }
+
+        var headers = normalizeHeaders(rawHeaderRow, trimWhitespace);
+        var normalizedRows = dataRows.map(function (row) {
+          var out = new Array(maxCols);
+          for (var c = 0; c < maxCols; c++) {
+            var val = c < row.length && row[c] != null ? String(row[c]) : '';
+            out[c] = trimWhitespace ? val.trim() : val;
+          }
+          return out;
+        });
+
+        return {
+          headers: headers,
+          rows: normalizedRows,
+          jaggedRows: jaggedRows
+        };
+      }
+
+      function filterColumns(headers, rows, includedMask) {
+        if (!Array.isArray(includedMask) || includedMask.length !== headers.length) {
+          return { headers: headers.slice(), rows: rows.map(function (r) { return r.slice(); }) };
+        }
+        var indices = [];
+        for (var i = 0; i < includedMask.length; i++) {
+          if (includedMask[i]) {
+            indices.push(i);
+          }
+        }
+        var nextHeaders = indices.map(function (idx) { return headers[idx]; });
+        var nextRows = rows.map(function (row) {
+          return indices.map(function (idx) { return row[idx]; });
+        });
+        return { headers: nextHeaders, rows: nextRows };
+      }
+
+      function toJSON(headers, rows, options) {
+        var opts = options || {};
+        var structure = opts.structure === 'arrays' ? 'arrays' : 'objects';
+        var pretty = opts.pretty !== false;
+        var autoParse = !!opts.autoParse;
+
+        var payload;
+        if (structure === 'arrays') {
+          payload = [headers.slice()].concat(
+            rows.map(function (row) {
+              return row.map(function (cell) {
+                return parseCellValue(cell, autoParse);
+              });
+            })
+          );
+        } else {
+          payload = rows.map(function (row) {
+            var obj = {};
+            for (var i = 0; i < headers.length; i++) {
+              obj[headers[i]] = parseCellValue(row[i], autoParse);
+            }
+            return obj;
+          });
+        }
+        return pretty ? JSON.stringify(payload, null, 2) : JSON.stringify(payload);
+      }
+
+      function escapeTSVCell(val) {
+        var str = val == null ? '' : String(val);
+        if (str.indexOf('\t') !== -1 || str.indexOf('\n') !== -1 || str.indexOf('\r') !== -1 || str.indexOf('"') !== -1) {
+          return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+      }
+
+      function toTSV(headers, rows) {
+        var lines = [headers.map(escapeTSVCell).join('\t')];
+        for (var r = 0; r < rows.length; r++) {
+          lines.push(rows[r].map(escapeTSVCell).join('\t'));
+        }
+        return lines.join('\n');
+      }
+
+      function escapeMarkdownCell(val) {
+        var str = val == null ? '' : String(val);
+        return str
+          .replace(/\|/g, '\\|')
+          .replace(/\r?\n/g, '<br>');
+      }
+
+      function toMarkdown(headers, rows) {
+        if (headers.length === 0) {
+          return '';
+        }
+        var headerLine = '| ' + headers.map(escapeMarkdownCell).join(' | ') + ' |';
+        var sepLine = '| ' + headers.map(function () { return '---'; }).join(' | ') + ' |';
+        var lines = [headerLine, sepLine];
+        for (var r = 0; r < rows.length; r++) {
+          lines.push('| ' + rows[r].map(escapeMarkdownCell).join(' | ') + ' |');
+        }
+        return lines.join('\n');
+      }
+
+      function escapeHTML(val) {
+        return String(val == null ? '' : val)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function toHTML(headers, rows) {
+        if (headers.length === 0) {
+          return '';
+        }
+        var out = ['<table>', '  <thead>', '    <tr>'];
+        for (var h = 0; h < headers.length; h++) {
+          out.push('      <th>' + escapeHTML(headers[h]) + '</th>');
+        }
+        out.push('    </tr>', '  </thead>', '  <tbody>');
+        for (var r = 0; r < rows.length; r++) {
+          out.push('    <tr>');
+          for (var c = 0; c < headers.length; c++) {
+            out.push('      <td>' + escapeHTML(rows[r][c]) + '</td>');
+          }
+          out.push('    </tr>');
+        }
+        out.push('  </tbody>', '</table>');
+        return out.join('\n');
+      }
+
+      function sanitizeSQLIdentifier(name, fallback) {
+        var cleaned = String(name == null ? '' : name).trim();
+        if (!cleaned) {
+          cleaned = fallback || 'exported_data';
+        }
+        // If clean simple identifier, return unquoted; otherwise ANSI double-quote safely
+        if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(cleaned)) {
+          return cleaned;
+        }
+        return '"' + cleaned.replace(/"/g, '""') + '"';
+      }
+
+      function formatSQLValue(raw, autoParse) {
+        var val = parseCellValue(raw, autoParse);
+        if (val === null) {
+          return 'NULL';
+        }
+        if (typeof val === 'number') {
+          return String(val);
+        }
+        if (typeof val === 'boolean') {
+          return val ? 'TRUE' : 'FALSE';
+        }
+        return "'" + String(val).replace(/'/g, "''") + "'";
+      }
+
+      function toSQL(headers, rows, options) {
+        if (headers.length === 0) {
+          return '';
+        }
+        var opts = options || {};
+        var tableId = sanitizeSQLIdentifier(opts.tableName, 'exported_data');
+        var autoParse = !!opts.autoParse;
+        var colList = headers.map(function (h, idx) {
+          return sanitizeSQLIdentifier(h, 'column_' + (idx + 1));
+        }).join(', ');
+
+        if (rows.length === 0) {
+          return '-- Table "' + tableId + '" has 0 data rows to insert.';
+        }
+
+        var stmts = new Array(rows.length);
+        for (var r = 0; r < rows.length; r++) {
+          var vals = new Array(headers.length);
+          for (var c = 0; c < headers.length; c++) {
+            vals[c] = formatSQLValue(rows[r][c], autoParse);
+          }
+          stmts[r] = 'INSERT INTO ' + tableId + ' (' + colList + ') VALUES (' + vals.join(', ') + ');';
+        }
+        return stmts.join('\n');
+      }
+
+      function computeColumnWidths(headers, rows) {
+        var widths = headers.map(function (h) {
+          return Math.max(10, String(h).length + 2);
+        });
+        var sampleLimit = Math.min(rows.length, 2000);
+        for (var r = 0; r < sampleLimit; r++) {
+          for (var c = 0; c < headers.length; c++) {
+            var cell = rows[r][c] == null ? '' : String(rows[r][c]);
+            var lines = cell.split(/\r?\n/);
+            for (var l = 0; l < lines.length; l++) {
+              var len = lines[l].length + 2;
+              if (len > widths[c]) {
+                widths[c] = len;
+              }
+            }
+          }
+        }
+        return widths.map(function (w) {
+          return Math.min(50, Math.max(10, w));
+        });
+      }
+
+      function buildExcelAOA(headers, rows, autoParse) {
+        var aoa = [headers.slice()];
+        for (var r = 0; r < rows.length; r++) {
+          var rowOut = new Array(headers.length);
+          for (var c = 0; c < headers.length; c++) {
+            var val = parseCellValue(rows[r][c], autoParse);
+            rowOut[c] = val === null ? '' : val;
+          }
+          aoa.push(rowOut);
+        }
+        return aoa;
+      }
+
+      root.CSVEngine = {
+        SAMPLE_CSV: SAMPLE_CSV,
+        DELIMITER_LABELS: DELIMITER_LABELS,
+        parseCellValue: parseCellValue,
+        normalizeHeaders: normalizeHeaders,
+        isRowEmpty: isRowEmpty,
+        processRawGrid: processRawGrid,
+        filterColumns: filterColumns,
+        toJSON: toJSON,
+        toTSV: toTSV,
+        toMarkdown: toMarkdown,
+        toHTML: toHTML,
+        toSQL: toSQL,
+        sanitizeSQLIdentifier: sanitizeSQLIdentifier,
+        computeColumnWidths: computeColumnWidths,
+        buildExcelAOA: buildExcelAOA
+      };
+    })(typeof globalThis !== 'undefined' ? globalThis : window);
+  </script>
+
+  <!-- UI Controller -->
+  <script>
+    (function () {
+      var Engine = globalThis.CSVEngine;
+
+      var state = {
+        inputMode: 'upload', // 'upload' | 'paste'
+        rawText: '',
+        fileName: 'converted_data',
+        delimiterOverride: 'auto',
+        detectedDelimiter: ',',
+        parseWarnings: [],
+        trimWhitespace: true,
+        skipEmptyRows: true,
+        autoParse: true,
+        rawGrid: [],
+        headers: [],
+        rows: [],
+        jaggedRows: [],
+        includedColumns: [],
+        outputFormat: 'json', // 'json' | 'xlsx' | 'tsv' | 'markdown' | 'html' | 'sql'
+        jsonStructure: 'objects', // 'objects' | 'arrays'
+        jsonPretty: true,
+        sqlTableName: 'exported_data',
+        fullOutputText: ''
+      };
+
+      // DOM References
+      var els = {
+        themeToggleBtn: document.getElementById('themeToggleBtn'),
+        themeToggleText: document.getElementById('themeToggleText'),
+        themeIconSun: document.getElementById('themeIconSun'),
+        themeIconMoon: document.getElementById('themeIconMoon'),
+        heroSampleBtn: document.getElementById('heroSampleBtn'),
+        resetDataBtn: document.getElementById('resetDataBtn'),
+        tabUploadBtn: document.getElementById('tabUploadBtn'),
+        tabPasteBtn: document.getElementById('tabPasteBtn'),
+        uploadPane: document.getElementById('uploadPane'),
+        pastePane: document.getElementById('pastePane'),
+        delimiterSelect: document.getElementById('delimiterSelect'),
+        dropzone: document.getElementById('dropzone'),
+        dropzoneTitle: document.getElementById('dropzoneTitle'),
+        dropzoneSub: document.getElementById('dropzoneSub'),
+        fileInput: document.getElementById('fileInput'),
+        rawCsvInput: document.getElementById('rawCsvInput'),
+        loadSampleBtn: document.getElementById('loadSampleBtn'),
+        clearPasteBtn: document.getElementById('clearPasteBtn'),
+        parsePasteBtn: document.getElementById('parsePasteBtn'),
+        errorAlert: document.getElementById('errorAlert'),
+        errorAlertText: document.getElementById('errorAlertText'),
+        warningAlert: document.getElementById('warningAlert'),
+        warningAlertText: document.getElementById('warningAlertText'),
+        previewMeta: document.getElementById('previewMeta'),
+        optTrim: document.getElementById('optTrim'),
+        optSkipEmpty: document.getElementById('optSkipEmpty'),
+        optAutoParse: document.getElementById('optAutoParse'),
+        columnsSection: document.getElementById('columnsSection'),
+        columnsCountLabel: document.getElementById('columnsCountLabel'),
+        selectAllColsBtn: document.getElementById('selectAllColsBtn'),
+        deselectAllColsBtn: document.getElementById('deselectAllColsBtn'),
+        columnsList: document.getElementById('columnsList'),
+        previewEmptyState: document.getElementById('previewEmptyState'),
+        emptySampleBtn: document.getElementById('emptySampleBtn'),
+        previewTableWrap: document.getElementById('previewTableWrap'),
+        previewThead: document.getElementById('previewThead'),
+        previewTbody: document.getElementById('previewTbody'),
+        exportMeta: document.getElementById('exportMeta'),
+        formatTabs: Array.prototype.slice.call(document.querySelectorAll('.format-tab')),
+        jsonOptions: document.getElementById('jsonOptions'),
+        jsonObjBtn: document.getElementById('jsonObjBtn'),
+        jsonArrBtn: document.getElementById('jsonArrBtn'),
+        jsonPrettyBtn: document.getElementById('jsonPrettyBtn'),
+        jsonMiniBtn: document.getElementById('jsonMiniBtn'),
+        sqlOptions: document.getElementById('sqlOptions'),
+        sqlTableInput: document.getElementById('sqlTableInput'),
+        genericFormatNote: document.getElementById('genericFormatNote'),
+        copyBtn: document.getElementById('copyBtn'),
+        downloadBtn: document.getElementById('downloadBtn'),
+        outputTruncateNotice: document.getElementById('outputTruncateNotice'),
+        outputCode: document.getElementById('outputCode'),
+        xlsxSummary: document.getElementById('xlsxSummary'),
+        xlsxRowCount: document.getElementById('xlsxRowCount'),
+        xlsxColCount: document.getElementById('xlsxColCount'),
+        xlsxSheetName: document.getElementById('xlsxSheetName')
+      };
+
+      // Theme Management
+      function syncThemeUI() {
+        var isDark = document.documentElement.classList.contains('dark');
+        els.themeToggleText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+        els.themeIconSun.classList.toggle('hidden', !isDark);
+        els.themeIconMoon.classList.toggle('hidden', isDark);
+      }
+
+      els.themeToggleBtn.addEventListener('click', function () {
+        var isDark = document.documentElement.classList.toggle('dark');
+        try {
+          localStorage.setItem('csvforge-theme', isDark ? 'dark' : 'light');
+        } catch (e) {}
+        syncThemeUI();
+      });
+      syncThemeUI();
+
+      // Alerts
+      function setError(message) {
+        if (message) {
+          els.errorAlertText.textContent = message;
+          els.errorAlert.classList.remove('hidden');
+        } else {
+          els.errorAlertText.textContent = '';
+          els.errorAlert.classList.add('hidden');
+        }
+      }
+
+      function setWarnings(messages) {
+        if (messages && messages.length > 0) {
+          els.warningAlertText.textContent = messages.join(' ');
+          els.warningAlert.classList.remove('hidden');
+        } else {
+          els.warningAlertText.textContent = '';
+          els.warningAlert.classList.add('hidden');
+        }
+      }
+
+      // Input Mode Tabs
+      function switchInputMode(mode) {
+        state.inputMode = mode;
+        var isUpload = mode === 'upload';
+        els.tabUploadBtn.classList.toggle('active', isUpload);
+        els.tabUploadBtn.setAttribute('aria-selected', String(isUpload));
+        els.tabPasteBtn.classList.toggle('active', !isUpload);
+        els.tabPasteBtn.setAttribute('aria-selected', String(!isUpload));
+        els.uploadPane.classList.toggle('hidden', !isUpload);
+        els.pastePane.classList.toggle('hidden', isUpload);
+      }
+
+      els.tabUploadBtn.addEventListener('click', function () { switchInputMode('upload'); });
+      els.tabPasteBtn.addEventListener('click', function () { switchInputMode('paste'); });
+
+      // Parse CSV using PapaParse
+      function parseRawCSV(text, sourceLabel) {
+        setError('');
+        setWarnings([]);
+
+        if (!text || text.trim() === '') {
+          state.rawGrid = [];
+          state.headers = [];
+          state.rows = [];
+          state.includedColumns = [];
+          state.parseWarnings = [];
+          setError('The provided input is empty. Upload a file or paste CSV rows to continue.');
+          renderWorkspace();
+          return;
+        }
+
+        if (typeof globalThis.Papa === 'undefined') {
+          setError('CSV parser library (PapaParse) failed to load. Check your network connection and reload.');
+          return;
+        }
+
+        var config = {
+          header: false,
+          skipEmptyLines: false,
+          delimitersToGuess: [',', ';', '\t', '|']
+        };
+        if (state.delimiterOverride !== 'auto') {
+          config.delimiter = state.delimiterOverride;
+        }
+
+        var result = globalThis.Papa.parse(text, config);
+        state.detectedDelimiter = (result.meta && result.meta.delimiter) || (state.delimiterOverride === 'auto' ? ',' : state.delimiterOverride);
+        state.rawGrid = Array.isArray(result.data) ? result.data : [];
+
+        var warnings = [];
+        if (result.errors && result.errors.length > 0) {
+          var critical = result.errors.filter(function (err) {
+            return err.code !== 'UndetectableDelimiter';
+          });
+          if (critical.length > 0) {
+            var firstErr = critical[0];
+            var rowHint = typeof firstErr.row === 'number' ? ' (near row ' + (firstErr.row + 1) + ')' : '';
+            warnings.push(
+              'Parsing notice' + rowHint + ': ' + firstErr.message +
+              (critical.length > 1 ? ' (+' + (critical.length - 1) + ' more issues)' : '') + '.'
+            );
+          }
+        }
+        state.parseWarnings = warnings;
+
+        if (sourceLabel) {
+          state.fileName = sourceLabel.replace(/\.[^/.]+$/, '') || 'converted_data';
+          var safeTable = state.fileName.replace(/[^a-zA-Z0-9_]+/g, '_').replace(/^_+|_+$/g, '');
+          if (safeTable && /^[0-9]/.test(safeTable)) {
+            safeTable = 't_' + safeTable;
+          }
+          if (safeTable) {
+            state.sqlTableName = safeTable.toLowerCase();
+            els.sqlTableInput.value = state.sqlTableName;
+          }
+        }
+
+        reprocessGrid(true);
+      }
+
+      function reprocessGrid(resetColumnSelection) {
+        var processed = Engine.processRawGrid(state.rawGrid, {
+          trimWhitespace: state.trimWhitespace,
+          skipEmptyRows: state.skipEmptyRows
+        });
+
+        state.headers = processed.headers;
+        state.rows = processed.rows;
+        state.jaggedRows = processed.jaggedRows;
+
+        if (state.headers.length === 0) {
+          state.includedColumns = [];
+          if (state.rawText.trim() !== '') {
+            setError('No header columns or data rows were detected after applying cleanup rules.');
+          }
+          renderWorkspace();
+          return;
+        }
+
+        if (resetColumnSelection || state.includedColumns.length !== state.headers.length) {
+          state.includedColumns = state.headers.map(function () { return true; });
+        }
+
+        var combinedWarnings = state.parseWarnings.slice();
+        if (state.jaggedRows.length > 0) {
+          var previewList = state.jaggedRows.slice(0, 5).join(', ');
+          var suffix = state.jaggedRows.length > 5 ? ', ...' : '';
+          combinedWarnings.push(
+            state.jaggedRows.length + ' row(s) had a different column count than the header (lines: ' +
+            previewList + suffix + ') and were aligned automatically.'
+          );
+        }
+        if (state.rows.length > 50000) {
+          combinedWarnings.push(
+            'Large dataset notice: ' + state.rows.length.toLocaleString() +
+            ' rows loaded. Table preview shows the first 50 rows for responsiveness; exports include all rows.'
+          );
+        }
+        setWarnings(combinedWarnings);
+        renderWorkspace();
+      }
+
+      function getFilteredDataset() {
+        return Engine.filterColumns(state.headers, state.rows, state.includedColumns);
+      }
+
+      function renderColumnToggles() {
+        if (state.headers.length === 0) {
+          els.columnsSection.classList.add('hidden');
+          els.columnsList.innerHTML = '';
+          return;
+        }
+
+        els.columnsSection.classList.remove('hidden');
+        var includedCount = state.includedColumns.filter(Boolean).length;
+        els.columnsCountLabel.textContent =
+          'Columns included (' + includedCount + ' of ' + state.headers.length + ')';
+
+        els.columnsList.innerHTML = '';
+        var frag = document.createDocumentFragment();
+        state.headers.forEach(function (header, idx) {
+          var label = document.createElement('label');
+          label.className = 'col-check';
+          label.title = header;
+
+          var cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = !!state.includedColumns[idx];
+          cb.setAttribute('aria-label', 'Include column ' + header);
+          cb.addEventListener('change', function () {
+            state.includedColumns[idx] = cb.checked;
+            renderColumnCountAndOutputs();
+          });
+
+          var span = document.createElement('span');
+          span.textContent = header;
+
+          label.appendChild(cb);
+          label.appendChild(span);
+          frag.appendChild(label);
+        });
+        els.columnsList.appendChild(frag);
+      }
+
+      function renderColumnCountAndOutputs() {
+        var includedCount = state.includedColumns.filter(Boolean).length;
+        els.columnsCountLabel.textContent =
+          'Columns included (' + includedCount + ' of ' + state.headers.length + ')';
+        renderPreviewTable();
+        renderExportOutput();
+      }
+
+      function renderPreviewTable() {
+        var filtered = getFilteredDataset();
+        var hasData = state.headers.length > 0;
+
+        els.resetDataBtn.classList.toggle('hidden', !hasData);
+        els.previewEmptyState.classList.toggle('hidden', hasData);
+        els.previewTableWrap.classList.toggle('hidden', !hasData);
+
+        if (!hasData) {
+          els.previewMeta.innerHTML = '<span>No file loaded</span>';
+          els.previewThead.innerHTML = '';
+          els.previewTbody.innerHTML = '';
+          return;
+        }
+
+        var delimLabel = Engine.DELIMITER_LABELS[state.detectedDelimiter] || JSON.stringify(state.detectedDelimiter);
+        var shownRows = Math.min(filtered.rows.length, 50);
+
+        els.previewMeta.innerHTML = '';
+        var metaParts = [
+          'Showing ' + shownRows.toLocaleString() + ' of ' + filtered.rows.length.toLocaleString() + ' rows',
+          filtered.headers.length + ' of ' + state.headers.length + ' columns',
+          'Delimiter: ' + delimLabel
+        ];
+        metaParts.forEach(function (text, i) {
+          if (i > 0) {
+            var sep = document.createElement('span');
+            sep.className = 'meta-sep';
+            sep.setAttribute('aria-hidden', 'true');
+            sep.textContent = '·';
+            els.previewMeta.appendChild(sep);
+          }
+          var span = document.createElement('span');
+          span.textContent = text;
+          els.previewMeta.appendChild(span);
+        });
+
+        // Table Head
+        els.previewThead.innerHTML = '';
+        var headTr = document.createElement('tr');
+        var thNum = document.createElement('th');
+        thNum.className = 'row-num-col';
+        thNum.textContent = '#';
+        headTr.appendChild(thNum);
+
+        if (filtered.headers.length === 0) {
+          var thEmpty = document.createElement('th');
+          thEmpty.textContent = 'No columns selected';
+          headTr.appendChild(thEmpty);
+          els.previewThead.appendChild(headTr);
+          els.previewTbody.innerHTML = '';
+          return;
+        }
+
+        filtered.headers.forEach(function (h) {
+          var th = document.createElement('th');
+          th.textContent = h;
+          th.title = h;
+          headTr.appendChild(th);
+        });
+        els.previewThead.appendChild(headTr);
+
+        // Table Body (first 50 rows)
+        els.previewTbody.innerHTML = '';
+        var tbodyFrag = document.createDocumentFragment();
+        for (var r = 0; r < shownRows; r++) {
+          var tr = document.createElement('tr');
+          var tdNum = document.createElement('td');
+          tdNum.className = 'row-num-cell';
+          tdNum.textContent = String(r + 1);
+          tr.appendChild(tdNum);
+
+          for (var c = 0; c < filtered.headers.length; c++) {
+            var td = document.createElement('td');
+            var rawVal = filtered.rows[r][c];
+            var parsedVal = Engine.parseCellValue(rawVal, state.autoParse);
+
+            if (rawVal === '' && parsedVal === null) {
+              td.className = 'cell-empty';
+              td.textContent = 'null';
+            } else if (rawVal === '') {
+              td.className = 'cell-empty';
+              td.textContent = '(empty)';
+            } else if (typeof parsedVal === 'number') {
+              td.className = 'cell-num';
+              td.textContent = String(parsedVal);
+            } else if (typeof parsedVal === 'boolean') {
+              td.className = 'cell-bool';
+              td.textContent = String(parsedVal);
+            } else {
+              td.textContent = rawVal;
+            }
+            tr.appendChild(td);
+          }
+          tbodyFrag.appendChild(tr);
+        }
+        els.previewTbody.appendChild(tbodyFrag);
+      }
+
+      function renderExportOutput() {
+        var filtered = getFilteredDataset();
+        var hasColumns = filtered.headers.length > 0;
+        var fmt = state.outputFormat;
+
+        // Toggle format option controls
+        els.jsonOptions.classList.toggle('hidden', fmt !== 'json');
+        els.sqlOptions.classList.toggle('hidden', fmt !== 'sql');
+        els.genericFormatNote.classList.toggle('hidden', fmt === 'json' || fmt === 'sql');
+
+        var extMap = {
+          json: '.json',
+          xlsx: '.xlsx',
+          tsv: '.tsv',
+          markdown: '.md',
+          html: '.html',
+          sql: '.sql'
+        };
+
+        els.downloadBtn.textContent = 'Download ' + extMap[fmt];
+        els.downloadBtn.disabled = !hasColumns;
+        els.copyBtn.disabled = !hasColumns || fmt === 'xlsx';
+        els.copyBtn.classList.toggle('hidden', fmt === 'xlsx');
+
+        if (fmt === 'tsv') {
+          els.genericFormatNote.textContent = 'Tab-separated values with RFC quote escaping';
+        } else if (fmt === 'markdown') {
+          els.genericFormatNote.textContent = 'GitHub-flavored Markdown table';
+        } else if (fmt === 'html') {
+          els.genericFormatNote.textContent = 'Semantic HTML <table> with escaped entities';
+        } else if (fmt === 'xlsx') {
+          els.genericFormatNote.textContent = 'Excel workbook with auto-fitted column widths';
+        }
+
+        if (!hasColumns) {
+          state.fullOutputText = '';
+          els.outputTruncateNotice.classList.add('hidden');
+          if (fmt === 'xlsx') {
+            els.outputCode.classList.add('hidden');
+            els.xlsxSummary.classList.remove('hidden');
+            els.xlsxRowCount.textContent = '0';
+            els.xlsxColCount.textContent = '0';
+            els.xlsxSheetName.textContent = 'Data';
+          } else {
+            els.xlsxSummary.classList.add('hidden');
+            els.outputCode.classList.remove('hidden');
+            els.outputCode.textContent = state.headers.length > 0
+              ? 'Select at least one column to generate output.'
+              : 'Load or paste CSV data to preview converted output.';
+          }
+          els.exportMeta.textContent = state.headers.length > 0 ? '0 columns selected' : 'Waiting for data';
+          return;
+        }
+
+        if (fmt === 'xlsx') {
+          state.fullOutputText = '';
+          els.outputTruncateNotice.classList.add('hidden');
+          els.outputCode.classList.add('hidden');
+          els.xlsxSummary.classList.remove('hidden');
+          els.xlsxRowCount.textContent = filtered.rows.length.toLocaleString();
+          els.xlsxColCount.textContent = String(filtered.headers.length);
+          els.xlsxSheetName.textContent = 'Data';
+          els.exportMeta.textContent = filtered.rows.length.toLocaleString() + ' rows · ' + filtered.headers.length + ' columns';
+          return;
+        }
+
+        els.xlsxSummary.classList.add('hidden');
+        els.outputCode.classList.remove('hidden');
+
+        var fullText = '';
+        if (fmt === 'json') {
+          fullText = Engine.toJSON(filtered.headers, filtered.rows, {
+            structure: state.jsonStructure,
+            pretty: state.jsonPretty,
+            autoParse: state.autoParse
+          });
+        } else if (fmt === 'tsv') {
+          fullText = Engine.toTSV(filtered.headers, filtered.rows);
+        } else if (fmt === 'markdown') {
+          fullText = Engine.toMarkdown(filtered.headers, filtered.rows);
+        } else if (fmt === 'html') {
+          fullText = Engine.toHTML(filtered.headers, filtered.rows);
+        } else if (fmt === 'sql') {
+          fullText = Engine.toSQL(filtered.headers, filtered.rows, {
+            tableName: state.sqlTableName,
+            autoParse: state.autoParse
+          });
+        }
+
+        state.fullOutputText = fullText;
+
+        var previewLimitChars = 40000;
+        if (fullText.length > previewLimitChars) {
+          els.outputCode.textContent = fullText.slice(0, previewLimitChars) + '\n\n... [Preview truncated for display speed — Copy and Download include all ' + filtered.rows.length.toLocaleString() + ' rows]';
+          els.outputTruncateNotice.textContent = 'Preview shows first 40 KB of ' + (fullText.length / 1024).toFixed(1) + ' KB output.';
+          els.outputTruncateNotice.classList.remove('hidden');
+        } else {
+          els.outputCode.textContent = fullText;
+          els.outputTruncateNotice.classList.add('hidden');
+        }
+
+        var byteKb = (new Blob([fullText]).size / 1024).toFixed(1);
+        els.exportMeta.textContent = filtered.rows.length.toLocaleString() + ' rows · ' + byteKb + ' KB';
+      }
+
+      function renderWorkspace() {
+        renderColumnToggles();
+        renderPreviewTable();
+        renderExportOutput();
+      }
+
+      // File Loading & Drag-and-Drop
+      function handleFile(file) {
+        if (!file) {
+          return;
+        }
+        var allowedExt = /\.(csv|tsv|txt)$/i;
+        if (!allowedExt.test(file.name) && file.type && !/^text\//.test(file.type) && file.type !== 'application/vnd.ms-excel') {
+          setError('Unsupported file type "' + file.name + '". Please choose a .csv, .tsv, or .txt file.');
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+          var content = typeof ev.target.result === 'string' ? ev.target.result : '';
+          state.rawText = content;
+          els.rawCsvInput.value = content.length <= 250000 ? content : '';
+          els.dropzoneTitle.textContent = file.name;
+          els.dropzoneSub.textContent = (file.size / 1024).toFixed(1) + ' KB loaded locally — drop another file to replace';
+          parseRawCSV(content, file.name);
+        };
+        reader.onerror = function () {
+          setError('Could not read "' + file.name + '". Please verify the file is readable UTF-8 text.');
+        };
+        reader.readAsText(file);
+      }
+
+      els.fileInput.addEventListener('change', function (e) {
+        if (e.target.files && e.target.files[0]) {
+          handleFile(e.target.files[0]);
+        }
+      });
+
+      ['dragenter', 'dragover'].forEach(function (evtName) {
+        els.dropzone.addEventListener(evtName, function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          els.dropzone.classList.add('dragover');
+        });
+      });
+
+      ['dragleave', 'drop'].forEach(function (evtName) {
+        els.dropzone.addEventListener(evtName, function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          els.dropzone.classList.remove('dragover');
+        });
+      });
+
+      els.dropzone.addEventListener('drop', function (e) {
+        var dt = e.dataTransfer;
+        if (dt && dt.files && dt.files[0]) {
+          handleFile(dt.files[0]);
+        }
+      });
+
+      // Paste & Sample Actions
+      function loadSampleDataset() {
+        switchInputMode('paste');
+        state.rawText = Engine.SAMPLE_CSV;
+        els.rawCsvInput.value = Engine.SAMPLE_CSV;
+        els.dropzoneTitle.textContent = 'Drop your CSV or TSV file here, or click to browse';
+        els.dropzoneSub.textContent = 'Supports .csv, .tsv, and .txt files — parsed instantly on your device';
+        parseRawCSV(Engine.SAMPLE_CSV, 'sample_customers');
+      }
+
+      els.loadSampleBtn.addEventListener('click', loadSampleDataset);
+      els.heroSampleBtn.addEventListener('click', loadSampleDataset);
+      els.emptySampleBtn.addEventListener('click', loadSampleDataset);
+
+      els.parsePasteBtn.addEventListener('click', function () {
+        state.rawText = els.rawCsvInput.value;
+        parseRawCSV(state.rawText, 'pasted_data');
+      });
+
+      els.clearPasteBtn.addEventListener('click', function () {
+        els.rawCsvInput.value = '';
+        state.rawText = '';
+        state.rawGrid = [];
+        state.headers = [];
+        state.rows = [];
+        state.includedColumns = [];
+        setError('');
+        setWarnings([]);
+        renderWorkspace();
+      });
+
+      els.resetDataBtn.addEventListener('click', function () {
+        els.fileInput.value = '';
+        els.rawCsvInput.value = '';
+        els.dropzoneTitle.textContent = 'Drop your CSV or TSV file here, or click to browse';
+        els.dropzoneSub.textContent = 'Supports .csv, .tsv, and .txt files — parsed instantly on your device';
+        state.rawText = '';
+        state.rawGrid = [];
+        state.headers = [];
+        state.rows = [];
+        state.includedColumns = [];
+        state.parseWarnings = [];
+        setError('');
+        setWarnings([]);
+        renderWorkspace();
+      });
+
+      // Delimiter & Cleanup Controls
+      els.delimiterSelect.addEventListener('change', function () {
+        state.delimiterOverride = els.delimiterSelect.value;
+        if (state.rawText.trim() !== '') {
+          parseRawCSV(state.rawText);
+        }
+      });
+
+      els.optTrim.addEventListener('change', function () {
+        state.trimWhitespace = els.optTrim.checked;
+        if (state.rawGrid.length > 0) {
+          reprocessGrid(false);
+        }
+      });
+
+      els.optSkipEmpty.addEventListener('change', function () {
+        state.skipEmptyRows = els.optSkipEmpty.checked;
+        if (state.rawGrid.length > 0) {
+          reprocessGrid(false);
+        }
+      });
+
+      els.optAutoParse.addEventListener('change', function () {
+        state.autoParse = els.optAutoParse.checked;
+        renderPreviewTable();
+        renderExportOutput();
+      });
+
+      els.selectAllColsBtn.addEventListener('click', function () {
+        state.includedColumns = state.headers.map(function () { return true; });
+        renderWorkspace();
+      });
+
+      els.deselectAllColsBtn.addEventListener('click', function () {
+        state.includedColumns = state.headers.map(function () { return false; });
+        renderWorkspace();
+      });
+
+      // Output Format Tabs & Options
+      els.formatTabs.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var fmt = btn.getAttribute('data-format');
+          state.outputFormat = fmt;
+          els.formatTabs.forEach(function (tab) {
+            var active = tab === btn;
+            tab.classList.toggle('active', active);
+            tab.setAttribute('aria-selected', String(active));
+          });
+          renderExportOutput();
+        });
+      });
+
+      function updateJsonStructure(structure) {
+        state.jsonStructure = structure;
+        els.jsonObjBtn.classList.toggle('active', structure === 'objects');
+        els.jsonObjBtn.setAttribute('aria-pressed', String(structure === 'objects'));
+        els.jsonArrBtn.classList.toggle('active', structure === 'arrays');
+        els.jsonArrBtn.setAttribute('aria-pressed', String(structure === 'arrays'));
+        renderExportOutput();
+      }
+
+      function updateJsonPretty(pretty) {
+        state.jsonPretty = pretty;
+        els.jsonPrettyBtn.classList.toggle('active', pretty);
+        els.jsonPrettyBtn.setAttribute('aria-pressed', String(pretty));
+        els.jsonMiniBtn.classList.toggle('active', !pretty);
+        els.jsonMiniBtn.setAttribute('aria-pressed', String(!pretty));
+        renderExportOutput();
+      }
+
+      els.jsonObjBtn.addEventListener('click', function () { updateJsonStructure('objects'); });
+      els.jsonArrBtn.addEventListener('click', function () { updateJsonStructure('arrays'); });
+      els.jsonPrettyBtn.addEventListener('click', function () { updateJsonPretty(true); });
+      els.jsonMiniBtn.addEventListener('click', function () { updateJsonPretty(false); });
+
+      els.sqlTableInput.addEventListener('input', function () {
+        state.sqlTableName = els.sqlTableInput.value;
+        renderExportOutput();
+      });
+
+      // Copy & Download Actions
+      var copyResetTimer = null;
+      els.copyBtn.addEventListener('click', function () {
+        if (!state.fullOutputText) {
+          return;
+        }
+        var onSuccess = function () {
+          els.copyBtn.textContent = 'Copied!';
+          if (copyResetTimer) {
+            clearTimeout(copyResetTimer);
+          }
+          copyResetTimer = setTimeout(function () {
+            els.copyBtn.textContent = 'Copy to Clipboard';
+          }, 1800);
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(state.fullOutputText).then(onSuccess).catch(function () {
+            fallbackCopy(state.fullOutputText, onSuccess);
+          });
+        } else {
+          fallbackCopy(state.fullOutputText, onSuccess);
+        }
+      });
+
+      function fallbackCopy(text, onSuccess) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+          onSuccess();
+        } catch (err) {
+          setError('Clipboard copy failed. Please copy directly from the preview or use Download.');
+        }
+        document.body.removeChild(ta);
+      }
+
+      els.downloadBtn.addEventListener('click', function () {
+        var filtered = getFilteredDataset();
+        if (filtered.headers.length === 0) {
+          return;
+        }
+        var fmt = state.outputFormat;
+        var baseName = state.fileName || 'converted_data';
+
+        if (fmt === 'xlsx') {
+          if (typeof globalThis.XLSX === 'undefined') {
+            setError('Excel export library (SheetJS) failed to load. Check your network connection and reload.');
+            return;
+          }
+          var aoa = Engine.buildExcelAOA(filtered.headers, filtered.rows, state.autoParse);
+          var ws = globalThis.XLSX.utils.aoa_to_sheet(aoa);
+          var widths = Engine.computeColumnWidths(filtered.headers, filtered.rows);
+          ws['!cols'] = widths.map(function (w) { return { wch: w }; });
+          var wb = globalThis.XLSX.utils.book_new();
+          globalThis.XLSX.utils.book_append_sheet(wb, ws, 'Data');
+          globalThis.XLSX.writeFile(wb, baseName + '.xlsx');
+          return;
+        }
+
+        var mimeMap = {
+          json: 'application/json;charset=utf-8',
+          tsv: 'text/tab-separated-values;charset=utf-8',
+          markdown: 'text/markdown;charset=utf-8',
+          html: 'text/html;charset=utf-8',
+          sql: 'application/sql;charset=utf-8'
+        };
+        var extMap = {
+          json: '.json',
+          tsv: '.tsv',
+          markdown: '.md',
+          html: '.html',
+          sql: '.sql'
+        };
+
+        var blob = new Blob([state.fullOutputText], { type: mimeMap[fmt] || 'text/plain;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = baseName + extMap[fmt];
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 1000);
+      });
+
+      // Initial render
+      renderWorkspace();
+    })();
+  </script>
+</body>
+</html>
